@@ -15,9 +15,7 @@ loop( Sock ):-
   directory_files( '.', L1 ),
   only_jpg( L1, L2 ), delete( L2, 0, L3 ),
   randomize, random_permutation( L3, L4 ),
-  length( L4, N_pict ), N_pict_ is N_pict + 1,
-  between( 1, N_pict_, I ),
-  nth( I, L4, File),
+  get_item( L4, File ),
   file_property( File, size( Size )),
 
   socket_accept( Sock, Client, Sin, Sout ),
@@ -96,4 +94,8 @@ vocab_to_list( [], [] ).
 vocab_to_list( [_-V1 | T1], [V1 | T2] ):-
     vocab_to_list( T1, T2 ).
 %-----------------------------------------------)
+
+get_item( [H | _], H ).
+get_item( [_ | T], Item ):-
+  get_item( T, Item ).
 
