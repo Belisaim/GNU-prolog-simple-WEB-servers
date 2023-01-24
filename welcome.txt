@@ -1,0 +1,9 @@
+Welcome!
+This is a start picture.
+
+Send command <Refresh>
+(<Ctrl-R> in Firefox)
+or reload the page by another method
+to view next picture...
+
+Enjoj!
