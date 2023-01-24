@@ -1,32 +1,49 @@
 % Server on localhost:1280 for GNU-prolog.
-% Transfer all jpg files from current directory
+% Transfer all jpg files from db directory
 % to web-client in random order by refresh command of client.
 
-:- initialization(go).
+:- initialization( go ).
 
 go :-
+  g_assign( db, [] ),
   socket( 'AF_INET',Sock ),
   socket_bind( Sock, 'AF_INET'(_, 1280) ),
-  socket_listen( Sock, 10 ),
+  socket_listen( Sock, 8 ),
   loop( Sock ).
 
 loop( Sock ):-
   repeat,
-  directory_files( '.', L1 ),
-  only_jpg( L1, L2 ), delete( L2, 0, L3 ),
-  randomize, random_permutation( L3, L4 ),
-  get_item( L4, File ),
-  file_property( File, size( Size )),
-
   socket_accept( Sock, Client, Sin, Sout ),
   set_stream_type( Sout, binary ),
 
   format( "Client: ~a~n", [Client] ),
   get_text( Sin, Text ), writeq( Text ), nl,
+  process( Sout, Text ),
 
+  close( Sin ),
+  close( Sout ),
+  fail.
+
+%-------------------------------------------------------------------------(
+process( Sout, [['GET', '/favicon.ico' | _] | _] ) :- !,
+  file_property( 'gprolog.ico', size( Size )),
+  atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/x-icon\nContent-Length: ', List1 ),
+  put_bytes( Sout, List1 ),
+  number_codes( Size, List2 ),
+  put_bytes( Sout, List2 ),
+  atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
+  put_bytes( Sout, List3 ),
+
+  open( 'gprolog.ico', read, S, [type(binary)] ),
+    transport_bytes( S, Sout ),
+  close( S ).
+%-----------------------------------------------------------
+process( Sout, [['GET', '/' | _] | _] ) :- !,
+  g_read( db, Files ),
+  get_item( Files, File0 ), atom_concat( 'db/', File0, File),
+  file_property( File, size( Size )),
   atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/jpeg\nContent-Length: ', List1 ),
   put_bytes( Sout, List1 ),
-
   number_codes( Size, List2 ),
   put_bytes( Sout, List2 ),
   atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
@@ -34,11 +51,22 @@ loop( Sock ):-
 
   open( File, read, S, [type(binary)] ),
     transport_bytes( S, Sout ),
-  close( S ),
+  close( S ).
+%-----------------------------------------------------------
+process( Sout, [['GET', Vars | _] | _] ) :- !,
+  % TODO
+  format( "Received parameters: ~w~n", [Vars] ).
+%-------------------------------------------------------------------------)
 
-  close( Sin ),
-  close( Sout ),
-  fail.
+%-----------------------------------------------(
+get_item( [], '../0welcome.jpg' ):- !,
+  directory_files( 'db', L1 ),
+  only_jpg( L1, L2 ), delete( L2, 0, L3 ),
+  randomize, random_permutation( L3, L4 ),
+  g_assign( db, L4 ).
+get_item( [H | T], H ):-
+  g_assign( db, T ).
+%-----------------------------------------------)
 
 %-----------------------------------------------------------
 get_text( S, [H | T] ):-
@@ -94,8 +122,4 @@ vocab_to_list( [], [] ).
 vocab_to_list( [_-V1 | T1], [V1 | T2] ):-
     vocab_to_list( T1, T2 ).
 %-----------------------------------------------)
-
-get_item( [H | _], H ).
-get_item( [_ | T], Item ):-
-  get_item( T, Item ).
 
