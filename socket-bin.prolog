@@ -28,12 +28,11 @@ loop( Sock ):-
 process( Sout, [['GET', '/favicon.ico' | _] | _] ) :- !,
   file_property( 'gprolog.ico', size( Size )),
   atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/x-icon\nContent-Length: ', List1 ),
-  put_bytes( Sout, List1 ),
+    put_bytes( Sout, List1 ),
   number_codes( Size, List2 ),
-  put_bytes( Sout, List2 ),
+    put_bytes( Sout, List2 ),
   atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
-  put_bytes( Sout, List3 ),
-
+    put_bytes( Sout, List3 ),
   open( 'gprolog.ico', read, S, [type(binary)] ),
     transport_bytes( S, Sout ),
   close( S ).
@@ -43,19 +42,28 @@ process( Sout, [['GET', '/' | _] | _] ) :- !,
   get_item( Files, File0 ), atom_concat( 'db/', File0, File),
   file_property( File, size( Size )),
   atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/jpeg\nContent-Length: ', List1 ),
-  put_bytes( Sout, List1 ),
+    put_bytes( Sout, List1 ),
   number_codes( Size, List2 ),
-  put_bytes( Sout, List2 ),
+    put_bytes( Sout, List2 ),
   atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
-  put_bytes( Sout, List3 ),
-
+    put_bytes( Sout, List3 ),
   open( File, read, S, [type(binary)] ),
     transport_bytes( S, Sout ),
   close( S ).
 %-----------------------------------------------------------
-process( Sout, [['GET', Vars | _] | _] ) :- !,
-  % TODO
-  format( "Received parameters: ~w~n", [Vars] ).
+process( Sout, [['GET', Variables | _] | _] ) :- !,
+  atom_concat( '/', Vars, Variables ),
+  format( "Received parameters: ~w~n", [Vars] ),
+  atom_codes( 'HTTP/1.1 200 OK~nContent-Type: text/html; charset=utf-8\nContent-Length: ', List1 ),
+    put_bytes( Sout, List1 ),
+  atom_concat( 'Command ', Vars, Msg0 ), atom_concat( Msg0, ' is not in the set.', Msg ),
+  atom_length( Msg, N_msg ),
+  number_codes( N_msg, List2 ),
+    put_bytes( Sout, List2 ),
+  atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
+    put_bytes( Sout, List3 ),
+  atom_codes( Msg, List4 ),
+    put_bytes( Sout, List4 ).
 %-------------------------------------------------------------------------)
 
 %-----------------------------------------------(

@@ -1,10 +1,10 @@
 % Server on localhost:1280 for GNU-prolog.
 % Transfer hello string to web-client.
 
-:- initialization(go).
+:- initialization( go ).
 
 go :-
-  socket( 'AF_INET',Sock ),
+  socket( 'AF_INET', Sock ),
   socket_bind( Sock, 'AF_INET'(_, 1280) ),
   socket_listen( Sock, 10 ),
   loop( Sock ).
@@ -15,7 +15,7 @@ loop( Sock ):-
   format( "Client: ~a~n", [Client] ),
 
   get_text( Sin, Text ), writeq( Text ), nl,
-  format( Sout,"HTTP/1.1 200 OK~nContent-Type: text/html; charset=utf-8~n~nПривет!", [] ),
+  format( Sout, "HTTP/1.1 200 OK~nContent-Type: text/html; charset=utf-8~n~nПривет!", [] ),
 
   close( Sin ),
   close( Sout ),
