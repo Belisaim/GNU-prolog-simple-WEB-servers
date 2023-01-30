@@ -6,6 +6,7 @@
 
 go :-
   g_assign( db, [] ),
+  change_directory( 'db' ),
   socket( 'AF_INET',Sock ),
   socket_bind( Sock, 'AF_INET'(_, 1280) ),
   socket_listen( Sock, 8 ),
@@ -16,7 +17,7 @@ loop( Sock ):-
   socket_accept( Sock, Client, Sin, Sout ),
   set_stream_type( Sout, binary ),
 
-  format( "Client: ~a~n", [Client] ),
+  date_time( DT ), format( "~w Client: ~a~n", [DT, Client] ),
   get_text( Sin, Text ), writeq( Text ), nl,
   process( Sout, Text ),
 
@@ -26,20 +27,20 @@ loop( Sock ):-
 
 %-------------------------------------------------------------------------(
 process( Sout, [['GET', '/favicon.ico' | _] | _] ) :- !,
-  file_property( 'gprolog.ico', size( Size )),
+  file_property( '../gprolog.ico', size( Size )),
   atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/x-icon\nContent-Length: ', List1 ),
     put_bytes( Sout, List1 ),
   number_codes( Size, List2 ),
     put_bytes( Sout, List2 ),
   atom_codes( '\nAccept-Ranges: bytes\n\n', List3 ),
     put_bytes( Sout, List3 ),
-  open( 'gprolog.ico', read, S, [type(binary)] ),
+  open( '../gprolog.ico', read, S, [type(binary)] ),
     transport_bytes( S, Sout ),
   close( S ).
 %-----------------------------------------------------------
 process( Sout, [['GET', '/' | _] | _] ) :- !,
   g_read( db, Files ),
-  get_item( Files, File0 ), atom_concat( 'db/', File0, File),
+  get_item( Files, File ),
   file_property( File, size( Size )),
   atom_codes( 'HTTP/1.1 200 OK\nContent-Type: image/jpeg\nContent-Length: ', List1 ),
     put_bytes( Sout, List1 ),
@@ -56,7 +57,7 @@ process( Sout, [['GET', Variables | _] | _] ) :- !,
   format( "Received parameters: ~w~n", [Vars] ),
   atom_codes( 'HTTP/1.1 200 OK~nContent-Type: text/html; charset=utf-8\nContent-Length: ', List1 ),
     put_bytes( Sout, List1 ),
-  atom_concat( 'Command ', Vars, Msg0 ), atom_concat( Msg0, ' is not in the set.', Msg ),
+  atom_concat( 'Sorry. I do not know such command: ', Vars, Msg ),
   atom_length( Msg, N_msg ),
   number_codes( N_msg, List2 ),
     put_bytes( Sout, List2 ),
@@ -68,7 +69,7 @@ process( Sout, [['GET', Variables | _] | _] ) :- !,
 
 %-----------------------------------------------(
 get_item( [], '../0welcome.jpg' ):- !,
-  directory_files( 'db', L1 ),
+  directory_files( '.', L1 ),
   only_jpg( L1, L2 ), delete( L2, 0, L3 ),
   randomize, random_permutation( L3, L4 ),
   g_assign( db, L4 ).
